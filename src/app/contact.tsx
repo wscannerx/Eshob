@@ -3,15 +3,18 @@
 import { useActionState } from "react";
 import { submitLead, type ContactState } from "./contact-action";
 import { Spinner } from "@/components/spinner";
+import { LEGAL } from "@/lib/legal";
 
-/* ── EDIT THESE ────────────────────────────────────────────────────────────
-   Your real contact details. Leave a line blank to hide that row.          */
+/* The email and phone come from src/lib/legal.ts so this block, the Terms /
+   Privacy / Refund pages and the footer can never drift apart — they did once,
+   and a customer seeing two different support numbers has no way to tell which
+   one is real. Change them there, not here. Only `area` is local to this
+   section; blank it to hide that row. */
 const CONTACT = {
-  email: "support@wscanner.ca",
-  phone: "+1 647 858 6669",
+  email: LEGAL.email,
+  phone: LEGAL.phone,
   area: "Serving cafés, salons & gyms across Canada",
 };
-/* ─────────────────────────────────────────────────────────────────────── */
 
 const field =
   "w-full rounded-xl border border-line-strong bg-card px-3.5 py-2.5 text-sm outline-none transition focus:border-accent focus:ring-1 focus:ring-accent";

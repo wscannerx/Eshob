@@ -1,10 +1,14 @@
 /**
- * Business details shown on the Terms / Privacy / Refund pages.
+ * The single source of truth for the business's own details.
  *
- * ⚠️ FILL THESE IN before you take real money. The pages below are a solid
- * starting point written around how this app actually works — but they are
- * not legal advice, and the bracketed values are placeholders. Have them
- * looked over by a lawyer before you go live in Canada.
+ * Read by the Terms / Privacy / Refund pages, the landing-page footer and the
+ * contact block — so changing a value here changes it everywhere. Don't copy
+ * any of it into a component: that is how the support phone ended up different
+ * in three places.
+ *
+ * These values are filled in and live. The wording of the legal pages is a
+ * careful starting point written around how this app actually works, but it is
+ * not legal advice — worth a lawyer's eye before the business scales.
  */
 export const LEGAL = {
   /** Trading name shown to customers. */
@@ -20,7 +24,12 @@ export const LEGAL = {
   /** Business mailing address. */
   address: "7705 112 St, Delta, BC V4C 4V9",
   email: "support@wscanner.ca",
-  phone: "+1 647 858 6669",
+  /**
+   * Must match the support phone on the Stripe account (Settings → Business →
+   * Public details). A customer who sees one number on a receipt and another on
+   * the Terms page has no way to tell which one reaches a human.
+   */
+  phone: "+1 (437) 345-9628",
   /**
    * PIPEDA requires a named individual accountable for personal information —
    * a role alone isn't enough. Put the owner's real name here.

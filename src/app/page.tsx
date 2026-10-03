@@ -6,6 +6,7 @@ import { PhoneShowcase } from "./phone-showcase";
 import { LiveStats } from "./live-stats";
 import { Contact } from "./contact";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { LEGAL } from "@/lib/legal";
 
 // Regenerate hourly so the live counts stay fresh without making every
 // visitor wait on a database round-trip.
@@ -301,11 +302,14 @@ export default function Home() {
           </nav>
 
           <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted">
-            <a href="mailto:support@wscanner.ca" className="hover:text-body">
-              support@wscanner.ca
+            <a href={`mailto:${LEGAL.email}`} className="hover:text-body">
+              {LEGAL.email}
             </a>
-            <a href="tel:+16478586669" className="whitespace-nowrap hover:text-body">
-              +1 647 858 6669
+            <a
+              href={`tel:${LEGAL.phone.replace(/[^\d+]/g, "")}`}
+              className="whitespace-nowrap hover:text-body"
+            >
+              {LEGAL.phone}
             </a>
           </div>
 
