@@ -50,11 +50,13 @@ export default async function OnboardingBillingPage({
     redirect("/dashboard");
   }
 
-  const firstCharge = new Date(Date.now() + TRIAL_DAYS * 86_400_000).toLocaleDateString(undefined, {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+  // No first-charge date is printed here on purpose. This page renders on the
+  // server, so any date it computes uses the server's clock and timezone —
+  // while Stripe works out the real trial end when the Checkout Session is
+  // created, in the customer's. The two drift by a day, and a page that
+  // promises one billing date while Stripe's own page shows another is the
+  // kind of thing a customer disputes. Stripe prints the exact date on its
+  // checkout page before they confirm, so that is the single source of truth.
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-4xl px-5 pb-20">
@@ -68,8 +70,8 @@ export default async function OnboardingBillingPage({
         <h1 className="mt-2 text-3xl font-extrabold tracking-tight">Add a payment method</h1>
         <p className="mt-3 text-body">
           {business?.name ? <strong>{business.name}</strong> : "Your business"} is ready. Choose a
-          plan and add a card to start your {TRIAL_DAYS}-day free trial — nothing is charged until{" "}
-          <strong>{firstCharge}</strong>, and cancelling before then costs you nothing.
+          plan and add a card to start your {TRIAL_DAYS}-day free trial — nothing is charged for the
+          first <strong>{TRIAL_DAYS} days</strong>, and cancelling before then costs you nothing.
         </p>
       </div>
 
@@ -128,8 +130,9 @@ export default async function OnboardingBillingPage({
           <li className="flex gap-2">
             <Check />
             <span>
-              Monthly and Yearly bill for the first time on {firstCharge}. Cancel before then from
-              Settings → Subscription and you pay nothing.
+              Monthly and Yearly bill for the first time when the {TRIAL_DAYS}-day trial ends —
+              Stripe shows you the exact date before you confirm. Cancel before then from Settings →
+              Subscription and you pay nothing.
             </span>
           </li>
           <li className="flex gap-2">

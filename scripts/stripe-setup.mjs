@@ -35,23 +35,30 @@ if (!key) {
 const stripe = new Stripe(key);
 const CURRENCY = "cad"; // Canada
 
-// One product per plan. `tag` lets us find/reuse it on re-runs.
+// One product per plan.
+//
+// `name` is CUSTOMER-FACING: it shows on Stripe's checkout page, on the emailed
+// receipt, and on the card statement. Keep it the brand name, not the repo name.
+//
+// `tag` is internal and must NEVER change — it's the metadata key this script
+// matches on to find products it already made, so renaming a tag would create a
+// duplicate product instead of reusing the existing one.
 const PRODUCTS = [
   {
     tag: "eshop_monthly",
-    name: "Eshop — Monthly",
+    name: "wscanner — Monthly",
     envVar: "STRIPE_PRICE_MONTHLY",
     price: { unit_amount: 2000, recurring: { interval: "month" } }, // $20/mo
   },
   {
     tag: "eshop_yearly",
-    name: "Eshop — Yearly",
+    name: "wscanner — Yearly",
     envVar: "STRIPE_PRICE_YEARLY",
     price: { unit_amount: 15000, recurring: { interval: "year" } }, // $150/yr
   },
   {
     tag: "eshop_lifetime",
-    name: "Eshop — Lifetime",
+    name: "wscanner — Lifetime",
     envVar: "STRIPE_PRICE_LIFETIME",
     price: { unit_amount: 25000 }, // $250 one-time
   },
