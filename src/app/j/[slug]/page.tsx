@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isBusinessLocked } from "@/lib/access-server";
 import { row } from "@/lib/db";
 import { getCustomerId } from "@/lib/customer";
 import { JoinForm, CollectButton, RedeemForm } from "./interactive";
@@ -58,6 +59,24 @@ export default async function JoinPage({ params }: { params: Promise<{ slug: str
     .maybeSingle();
 
   const campaign = row<CampaignRow>(data);
+
+  // The business stopped paying. Say so the way a customer standing at a
+  // counter needs to hear it — their stamps are fine, the shop just has to sort
+  // something out — and never mention billing. They aren't the ones who owe us.
+  if (campaign && (await isBusinessLocked(admin, campaign.business_id))) {
+    return (
+      <Shell>
+        <div className="text-center">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-line text-2xl">⏸</div>
+          <h1 className="text-xl font-bold">Temporarily unavailable</h1>
+          <p className="mt-2 text-sm text-muted">
+            This loyalty card is paused at the moment. Your stamps are safe — please
+            check back soon, or ask at the counter.
+          </p>
+        </div>
+      </Shell>
+    );
+  }
 
   if (!campaign || campaign.status !== "active") {
     return (

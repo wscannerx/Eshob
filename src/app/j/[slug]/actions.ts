@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isBusinessLocked } from "@/lib/access-server";
 import { row } from "@/lib/db";
 import { getCustomerId, CUSTOMER_COOKIE } from "@/lib/customer";
 
@@ -94,6 +95,12 @@ async function getActiveCampaign(admin: ReturnType<typeof createAdminClient>, sl
     .eq("slug", slug)
     .maybeSingle();
   if (!data) return null;
+
+  // Every public action — join, stamp, redeem — comes through here, so this one
+  // check closes all three at once. It has to live in the action and not only
+  // in the page: the page render is a suggestion, a POST is what actually
+  // writes, and anyone can replay a form submission against a paused card.
+  if (await isBusinessLocked(admin, data.business_id as string)) return null;
   const b = (row<{ businesses?: Record<string, unknown> | null }>(data)?.businesses ?? {}) as {
     compulsory_approval?: boolean;
     allow_remote_scan?: boolean;

@@ -17,6 +17,24 @@ export async function markCardOnFile(businessId: string): Promise<void> {
 }
 
 /**
+ * Start the grace-period clock on a failed payment.
+ *
+ * Idempotent by the same trick as markCardOnFile: the `.is(null)` filter means
+ * only the FIRST failure stamps a time. Stripe retries a failed invoice several
+ * times over about two weeks, and every retry sends another
+ * invoice.payment_failed — without this, each one would push the deadline back
+ * and the grace period would never actually expire.
+ */
+export async function markPastDue(businessId: string): Promise<void> {
+  const admin = createAdminClient();
+  await admin
+    .from("subscriptions")
+    .update({ past_due_since: new Date().toISOString() })
+    .eq("business_id", businessId)
+    .is("past_due_since", null);
+}
+
+/**
  * Pull the live subscription state from Stripe and write it into our DB.
  *
  * Webhooks are the normal path, but they can be missed (CLI not running in
@@ -53,18 +71,25 @@ export async function syncFromStripe(businessId: string): Promise<void> {
       // env match first, then anything we've resolved ourselves this process
       const priceId = live.items.data[0]?.price?.id;
       const plan = planFromPrice(priceId) ?? planFromResolved(priceId);
+      const status = mapStatus(live.status);
       await admin
         .from("subscriptions")
         .update({
           stripe_subscription_id: live.id,
-          status: mapStatus(live.status),
+          status,
           ...(plan ? { plan } : {}),
           current_period_end: periodEndOf(live),
           trial_ends_at: tsToIso(live.trial_end),
           cancel_at_period_end: live.cancel_at_period_end ?? false,
+          // Paid again (or back in trial) → the grace clock is irrelevant, so
+          // clear it. Leaving a stale timestamp would mean the NEXT failed
+          // payment inherited an already-expired grace period and locked the
+          // owner out with no warning at all.
+          ...(status === "past_due" ? {} : { past_due_since: null }),
           ...cardPatch,
         })
         .eq("business_id", businessId);
+      if (status === "past_due") await markPastDue(businessId);
       return;
     }
 
@@ -74,7 +99,13 @@ export async function syncFromStripe(businessId: string): Promise<void> {
     if (paid) {
       await admin
         .from("subscriptions")
-        .update({ status: "active", plan: "lifetime", cancel_at_period_end: false, ...cardPatch })
+        .update({
+          status: "active",
+          plan: "lifetime",
+          cancel_at_period_end: false,
+          past_due_since: null,
+          ...cardPatch,
+        })
         .eq("business_id", businessId);
     }
   } catch (err) {

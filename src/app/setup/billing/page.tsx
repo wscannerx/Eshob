@@ -6,6 +6,7 @@ import { getCurrentUserAndBusiness } from "@/lib/business";
 import { signOut } from "@/app/actions";
 import { PLANS, type PlanKey } from "@/lib/stripe";
 import { TRIAL_DAYS } from "@/lib/checkout";
+import { accessFor } from "@/lib/access";
 import { SubmitButton } from "@/components/submit-button";
 import { startOnboardingCheckout } from "./actions";
 
@@ -41,12 +42,19 @@ export default async function OnboardingBillingPage({
   const supabase = await createClient();
   const { data: sub } = await supabase
     .from("subscriptions")
-    .select("card_added_at,plan,status")
+    .select("card_added_at,plan,status,trial_ends_at,past_due_since")
     .eq("business_id", businessId)
     .maybeSingle();
 
+  const locked = accessFor(sub).state === "locked";
+
   // Card already on file (or a paid Lifetime) — nothing to do here.
-  if (sub?.card_added_at || (sub?.plan === "lifetime" && sub?.status === "active")) {
+  //
+  // Unless access has been cut off: a locked owner is sent here by the lock
+  // screen to pick a plan, and they have a card on file from the first time
+  // round. Bouncing them to /dashboard would land them back on the lock
+  // screen, which points here — a loop with no way to pay.
+  if (!locked && (sub?.card_added_at || (sub?.plan === "lifetime" && sub?.status === "active"))) {
     redirect("/dashboard");
   }
 
