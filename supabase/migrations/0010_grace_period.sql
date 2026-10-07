@@ -14,7 +14,6 @@ alter table public.subscriptions
 
 -- Anyone already sitting in past_due when this ships starts their grace period
 -- now. Backdating it would lock them out the moment the code deploys, without
--- the warning the grace period exists to give.
 update public.subscriptions
    set past_due_since = now()
  where status = 'past_due'
